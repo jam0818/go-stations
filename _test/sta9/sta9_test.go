@@ -70,7 +70,7 @@ func TestStation9(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			resp, err := http.Post(srv.URL+"/todos", "application/json",
 				bytes.NewBufferString(fmt.Sprintf(`{"subject":"%s","description":"%s"}`, tc.Subject, tc.Description)))
-			if err != nil {
+				if err != nil {
 				t.Error("リクエストの送信に失敗しました。", err)
 				return
 			}
