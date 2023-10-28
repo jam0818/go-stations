@@ -2,6 +2,7 @@ package sta12_test
 
 import (
 	"context"
+	"log"
 	"os"
 	"reflect"
 	"testing"
@@ -85,6 +86,7 @@ func TestStation12(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			svc := service.NewTODOService(d)
 			got, err := svc.UpdateTODO(context.Background(), tc.ID, tc.Subject, tc.Description)
+			log.Println(got, err)
 			switch tc.WantError {
 			case nil:
 				if err != nil {

@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"log"
-	"reflect"
 
 	"github.com/TechBowl-japan/go-stations/model"
 )
@@ -50,10 +48,10 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 
 	// 挿入したTODOの情報をクエリ
 	row := tx.QueryRowContext(ctx, confirm, id)
-	log.Println(reflect.TypeOf(row))
 	var todo model.TODO
 	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
 	todo.ID = id
+
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +81,38 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 		confirm = `SELECT subject, description, created_at, updated_at FROM todos WHERE id = ?`
 	)
 
-	return nil, nil
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx, update, subject, description, id)
+	if err != nil {
+		return nil, err
+	}
+
+	numRows, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if numRows == 0 {
+		return nil, &model.ErrNotFound{}
+	}
+
+	row := tx.QueryRowContext(ctx, confirm, id)
+	var todo model.TODO
+	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
+	todo.ID = id
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &todo, nil
 }
 
 // DeleteTODO deletes TODOs on DB by ids.
