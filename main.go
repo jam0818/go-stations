@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -20,7 +21,7 @@ func main() {
 func realMain() error {
 	// config values
 	const (
-		defaultPort   = ":8080"
+		defaultPort   = ":8081"
 		defaultDBPath = ".sqlite3/todo.db"
 	)
 
@@ -46,7 +47,12 @@ func realMain() error {
 	if err != nil {
 		return err
 	}
-	defer todoDB.Close()
+	defer func(todoDB *sql.DB) {
+		err := todoDB.Close()
+		if err != nil {
+
+		}
+	}(todoDB)
 
 	// NOTE: 新しいエンドポイントの登録はrouter.NewRouterの内部で行うようにする
 	mux := router.NewRouter(todoDB)
@@ -56,6 +62,7 @@ func realMain() error {
 		Addr:    port,
 		Handler: mux,
 	}
+
 	log.Printf("Server is listening on port %s...\n", port)
 	err = server.ListenAndServe()
 	if err != nil {

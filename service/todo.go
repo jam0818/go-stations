@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"log"
+	"strings"
 
 	"github.com/TechBowl-japan/go-stations/model"
 )
@@ -94,6 +97,10 @@ func (s *TODOService) ReadTODO(ctx context.Context, prevID, size int64) ([]*mode
 		todos = append(todos, &todo)
 	}
 
+	if len(todos) == 0 {
+		return []*model.TODO{}, nil
+	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -145,6 +152,59 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 // DeleteTODO deletes TODOs on DB by ids.
 func (s *TODOService) DeleteTODO(ctx context.Context, ids []int64) error {
 	const deleteFmt = `DELETE FROM todos WHERE id IN (?%s)`
+	var query string
+	var args []interface{}
+
+	if len(ids) == 0 {
+		// ids が空の場合はクエリを実行しない
+		return nil
+	} else if len(ids) == 1 {
+		// ids が 1 つの要素を持つ場合は単一のプレースホルダーを使用
+		query = "DELETE FROM todos WHERE id = ?"
+		args = append(args, ids[0])
+	} else {
+		// ids が複数の要素を持つ場合は必要な数のプレースホルダーを生成
+		query = fmt.Sprintf(deleteFmt, strings.Repeat(",?", len(ids)-1))
+		for _, id := range ids {
+			args = append(args, id)
+		}
+	}
+	// ids を []interface{} に変換
+	idInterfaces := make([]interface{}, len(ids))
+	log.Println(query)
+	for i, id := range ids {
+		idInterfaces[i] = id
+	}
+
+	// トランザクションを開始
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// TODO 削除クエリの実行
+	result, err := tx.ExecContext(ctx, query, idInterfaces...)
+	if err != nil {
+		return err
+	}
+
+	// 削除された行数を取得
+	numRows, err := result.RowsAffected()
+	log.Printf("numrows: %v", numRows)
+	if err != nil {
+		return err
+	}
+
+	// 削除された行がなかった場合はエラーを返す
+	if numRows == 0 {
+		return &model.ErrNotFound{}
+	}
+
+	// トランザクションをコミット
+	if err := tx.Commit(); err != nil {
+		return err
+	}
 
 	return nil
 }
