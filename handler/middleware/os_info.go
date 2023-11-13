@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"context"
 	"github.com/TechBowl-japan/go-stations/model"
+	"github.com/TechBowl-japan/go-stations/xcontext"
 	"github.com/mssola/user_agent"
 	"net/http"
 )
@@ -24,7 +24,8 @@ func OSInfo(next http.Handler) http.Handler {
 		userAgent := r.UserAgent()
 		envInfo := getenvFromUserAgent(userAgent)
 
-		ctx := context.WithValue(r.Context(), model.EnvinfoKey{}, envInfo)
+		ctx := xcontext.SetOSInfo(r.Context(), envInfo)
+		//ctx := context.WithValue(r.Context(), model.EnvinfoKey{}, envInfo)
 
 		r = r.WithContext(ctx)
 

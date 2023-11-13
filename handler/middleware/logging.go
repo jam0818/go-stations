@@ -3,7 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/TechBowl-japan/go-stations/model"
+	"github.com/TechBowl-japan/go-stations/xcontext"
 	"net/http"
 	"time"
 )
@@ -12,15 +12,8 @@ func Logging(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		accessTime := time.Now()
 		next.ServeHTTP(w, r)
-		endTime := time.Now()
-		latency := endTime.Sub(accessTime).Milliseconds()
-		envInfo, ok := r.Context().Value(model.EnvinfoKey{}).(model.EnvInfo)
-		if !ok {
-			envInfo = model.EnvInfo{
-				OS:      "",
-				Browser: "",
-			}
-		}
+		latency := time.Since(accessTime).Milliseconds()
+		envInfo := xcontext.GetOSInfo(r.Context())
 		accessLog := struct {
 			Timestamp time.Time
 			Latency   int64

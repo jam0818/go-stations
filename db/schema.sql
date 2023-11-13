@@ -7,7 +7,4 @@ CREATE TABLE IF NOT EXISTS todos (
   CHECK(subject <> '')
 );
 
-CREATE TRIGGER IF NOT EXISTS trigger_todos_updated_at AFTER UPDATE ON todos
-BEGIN
-  UPDATE todos SET updated_at = DATETIME('now') WHERE id == NEW.id;
-END;
+;;''

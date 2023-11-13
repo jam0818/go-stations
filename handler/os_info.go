@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/TechBowl-japan/go-stations/model"
+	"github.com/TechBowl-japan/go-stations/xcontext"
 	"log"
 	"net/http"
 )
@@ -15,13 +15,7 @@ func NewOSInfoHandler() *OSInfoHandler {
 }
 
 func (h *OSInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	envInfo, ok := r.Context().Value(model.EnvinfoKey{}).(model.EnvInfo)
-	if !ok {
-		envInfo = model.EnvInfo{
-			OS:      "",
-			Browser: "",
-		}
-	}
+	envInfo := xcontext.GetOSInfo(r.Context())
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(envInfo)
